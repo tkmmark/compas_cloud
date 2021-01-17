@@ -1,8 +1,10 @@
 import inspect
 
+
 # ==============================================================================
 # CHECK METHODS' TYPES
 # ==============================================================================
+
 
 def is_class_method(cls, name):
     if hasattr(cls, name):
@@ -42,9 +44,13 @@ def is_static_method(cls_, name, value=None):
 def is_builtins_instance(data):
     return 'builtin' in data.__class__.__module__
 
+def is_special_method(name):
+    pass
+
 # ==============================================================================
 # CHECK INSTANCES' TYPES
 # ==============================================================================
+
 
 # TODO: create a single type checker for all cached ref objs
 def is_cached_object_proxy_data(object_):
@@ -55,8 +61,8 @@ def is_cached_object_proxy_data(object_):
         return False
 
 def is_cached_object_proxy(object_):
+    from compas_coud.datastructures.cachedproxy import MetaCachedObjectProxyClass
     if hasattr(object_, '__metaclass__') and object_.__metaclass__ is MetaCachedObjectProxyClass:
         return True
     else:
         return False
-

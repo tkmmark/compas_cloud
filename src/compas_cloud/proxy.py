@@ -12,7 +12,7 @@ from subprocess import Popen
 from subprocess import PIPE
 
 import compas
-from compas_struct_ml.utilities import DataDecoder, DataEncoder
+
 
 if compas.IPY:
     from .client_net import Client_Net as Client
@@ -20,24 +20,19 @@ if compas.IPY:
 else:
     from .client_websockets import Client_Websockets as Client
 
-if compas.IPY:
-    from System import AggregateException as ConnectionClosedError  # FIXME
-else:
-    from websockets.exceptions import ConnectionClosedError
 
-import compas_struct_ml_proxy as csmlp
-default_port = csmlp.CLOUD_DEFAULTS['port']
-default_host = csmlp.CLOUD_DEFAULTS['host']
+import compas_cloud as cc
+default_port = cc.CLOUD_DEFAULTS['port']
+default_host = cc.CLOUD_DEFAULTS['host']
 
-from functools import wraps
-from compas_struct_ml_proxy._cloud.utils import parse_caching_instructions, make_cached_object_proxy
-from compas_struct_ml_proxy._cloud.utils import is_cached_object_proxy, is_cached_object_proxy_data
+#FIXME
+from compas.utilities.encoders import DataDecoder, DataEncoder
 
-
-
-
-class ServerSideError(Exception):
-    pass
+from compas_cloud.helpers.errors import ServerSideError
+from compas_cloud.helpers.retrievers import parse_caching_instructions
+from compas_cloud.helpers.wrappers import retry_if_exception, try_reconnect_to_server
+from compas_cloud.helpers.queries import is_cached_object_proxy, is_cached_object_proxy_data
+from compas_cloud.datastructures.cacheproxy import make_cached_object_proxy
 
 # ==============================================================================
 # ==============================================================================
@@ -85,6 +80,7 @@ z
         self.host = host
         self.port = port
         self.background = background
+        print(host, port)
         self.client = self.try_reconnect()
         if self.client and restart:
             self.shutdown()

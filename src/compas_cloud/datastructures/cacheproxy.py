@@ -1,10 +1,7 @@
-from compas_struct_ml.utilities import *
-import importlib
 
 # ==============================================================================
 # CACHED OBJECT PROXY
 # ==============================================================================
-
 
 _ATTRS_IGNORED =    ['__class__',
                      '__delattr__',
@@ -120,6 +117,7 @@ class MetaCachedObjectProxyClass(type):
 
     def __new__(meta, name, bases, dict_,
                 proxy, attrs, *args, **kwargs):
+        """create new object"""
 
         if name in meta._classes:
             return meta._classes[name]
@@ -127,10 +125,10 @@ class MetaCachedObjectProxyClass(type):
             cls_ = super(MetaCachedObjectProxyClass, meta).__new__(meta, name, bases, dict_)
             cls_._proxy = proxy
             cls_._attrs = attrs
-            # meta.set_class_construction_data(cls_, proxy, attrs)
             return cls_
 
     def __init__(cls, name, bases, dct, *args, **kwargs):
+        """object proxy instantiation"""
 
         if name not in MetaCachedObjectProxyClass._classes:
             cls.build_core_cached_proxy_methods()
@@ -168,12 +166,3 @@ def make_cached_object_proxy(proxy, cached_obj_data):
     cached_obj_proxy        = CachedObjectProxyClass(cached=cached_ref_obj)
 
     return cached_obj_proxy
-
-
-# ==============================================================================
-# ==============================================================================
-# GET
-# ==============================================================================
-# ==============================================================================
-
-

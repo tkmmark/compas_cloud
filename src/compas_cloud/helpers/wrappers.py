@@ -1,7 +1,13 @@
+
+from functools import wraps
+
 import compas
+import time
 
 if compas.IPY:
-    from System import AggregateException as ConnectionClosedError  # FIXME
+    # FIXME: research and use a more specific ConnectionClosedError for the IronPython case
+    import Rhino
+    from System import AggregateException as ConnectionClosedError 
 else:
     from websockets.exceptions import ConnectionClosedError
 

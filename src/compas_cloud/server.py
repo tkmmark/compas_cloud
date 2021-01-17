@@ -17,31 +17,19 @@ except ImportError:
 
 
 from copy import deepcopy
+from collections import OrderedDict
 
 import compas
 from compas.utilities import timestamp
 from compas.utilities.encoders import cls_from_dtype
 
-from collections import OrderedDict
-
 from compas_struct_ml.utilities import DataDecoder, DataEncoder
 
-from compas_struct_ml_proxy._cloud.utils import get_function, is_class_method, is_static_method, is_builtins_instance
-
-_NAME_TO_DTYPE = {}
-
-
-# MOVE
-def parse_name(object_):
-    if hasattr(object_, 'name'):
-        return object_.name
-    elif hasattr(object_, '__name__'):
-        return object_.__name__
-    else:
-        return repr(object_)
+from compas_cloud.helpers.retrievers import get_function, parse_name
+from compas_cloud.helpers.queries import is_class_method, is_static_method, is_builtins_instance
 
 
-class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProtocol
+class CompasServerProtocol(WebSocketServerProtocol):
     """The CompasServerProtocol defines the behaviour of compas cloud server"""
 
     # ==============================================================================
@@ -64,7 +52,7 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
                                                 'by_dkey': {}},
                                     }
                         }
-    default_sets = {'cache_protocol': None, 'save_requests': False}
+    default_settings = {'cache_protocol': None, 'save_requests': False}
 
     # ==============================================================================
     # ==============================================================================
@@ -73,15 +61,10 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
     # ==============================================================================
 
     cached = {}
-    sets = deepcopy(default_sets)
+    settings = deepcopy(default_settings)
     logs = deepcopy(default_logs)
     sandbox = {}
     sessions = None
-
-    @staticmethod
-    def register_class_name_and_dtype(class_):
-        obj = class_()
-        _NAME_TO_DTYPE[obj.name] = obj.dtype
 
     # ==============================================================================
     # ==============================================================================
@@ -122,17 +105,16 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
     # ==============================================================================
 
     def as_type(self, to_cast, as_type):
+        """Convert data before returning to, or after recieving from client"""
         if as_type is not None and isinstance(as_type, dict):
             if 'dtype_' in as_type:
                 dtype = as_type['dtype_']
-                if dtype in _NAME_TO_DTYPE:
-                    dtype = _NAME_TO_DTYPE[dtype]
 
                 cls_ = cls_from_dtype(dtype)
 
-                try:
+                if hasattr(cls_, 'from_data') and hasattr(cls_, 'to_data'):
                     return cls_.from_data(to_cast.to_data())
-                except AttributeError:
+                else:
                     try:
                         return cls_(to_cast)
                     except Exception as e:
@@ -284,7 +266,12 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
     def get(self, data):
         """get cached data from its id"""
 
-        data, rtn_cached_only = ({'get': data}, True) if ('get' not in data and 'cached' in data) else (data, False)
+        # called internally from server (e.g. parsing keywords argument)
+        if ('get' not in data and 'cached' in data):
+            data, return_cached_directly = {'get': data}, True
+        # retrieving cached from proxy request
+        else:
+            data, return_cached_directly = data, False
 
         cached_ref_obj = data['get']
 
@@ -296,14 +283,14 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
         self.update_timestamps(id_, dkey=dk, channel=chnl, accessed=True)
         cached = self.as_type(cached, data.get('as_type', None))
 
-        data['_get'] = cached_ref_obj
+        # data['_get'] = cached_ref_obj
         data['get'] = cached
 
         if data.get('as_cache', False):
             self.get_cached_object_attributes(cached, cached_ref_obj)
             return cached_ref_obj
 
-        return data if not rtn_cached_only else data['get']
+        return data if not return_cached_directly else data['get']
 
     def get_timestamps(self, data):
 
@@ -325,8 +312,8 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
         return self.cached_timestamps[id_]
 
     def settings(self, data):
-        updated_sets = data['settings']
-        self.sets.update(updated_sets)
+        updated_settings = data['settings']
+        self.settings.update(updated_settings)
         return True
 
     # ==============================================================================
@@ -444,7 +431,7 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
     # ==============================================================================
 
     def _resolve_settings(self, settings_key, value):
-        value_ = value if settings_key not in self.sets else self.sets[settings_key]
+        value_ = value if settings_key not in self.settings else self.settings[settings_key]
         value_ = value_ or value
         return value_
 
@@ -476,16 +463,6 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
 
         start = time.time()
         res = func(*data['args'], **data['kwargs'])
-
-        # res = self._parse_output(res, data)
-        # if cache_protocol > 0:
-        #     res = {'to_cache': res,
-        #            'cache': cache_protocol, 'dkey': data['dkey']}
-        #     res = self.cache(res)
-
-        # elif cache_protocol == -1:
-        #     # discard results
-        #     res = None
 
         t = time.time() - start
         print('finished in: {}s'.format(t))
@@ -600,7 +577,6 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
     # ==============================================================================
     # ==============================================================================
 
-
     def log_request(self, data):
         ts = timestamp()
         entry = {ts: data}
@@ -610,7 +586,7 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
         """process received data according to its content"""
         data = json.loads(data, cls=DataDecoder)[0]
 
-        if self.sets['save_requests']:
+        if self.settings['save_requests']:
             self.log_request(data)
 
         print('Received request...')
@@ -696,6 +672,7 @@ class CompasStructMLServerProtocol(WebSocketServerProtocol):  #CompasServerProto
             "Python":       sys.version,
             "Extensions":   compas_pkgs
         }
+
 
 if __name__ == '__main__':
 
