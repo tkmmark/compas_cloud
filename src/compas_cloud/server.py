@@ -15,16 +15,14 @@ try:
 except ImportError:
     pass
 
-
 from copy import deepcopy
 from collections import OrderedDict
 
 import compas
 from compas.utilities import timestamp
-from compas.utilities.encoders import cls_from_dtype
 
-from compas_struct_ml.utilities import DataDecoder, DataEncoder
-
+import compas_cloud as cc
+from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
 from compas_cloud.helpers.retrievers import get_function, parse_name
 from compas_cloud.helpers.queries import is_class_method, is_static_method, is_builtins_instance
 
@@ -311,9 +309,9 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
         return self.cached_timestamps[id_]
 
-    def settings(self, data):
-        updated_settings = data['settings']
-        self.settings.update(updated_settings)
+    def update_settings(self, data):
+        updates = data['settings']
+        self.settings.update(updates)
         return True
 
     # ==============================================================================
@@ -334,7 +332,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
     def cache(self, data,
               id_=None, dkey=None, cache_protocol=1, channel=0,
-              as_type=None):
+              as_type=None, replace=False):
         """cache received data and return its reference object"""
 
         if isinstance(data, dict) and 'cache' in data:
@@ -342,6 +340,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
             cache_protocol = data['cache']
             dkey = data.get('dkey', dkey)
             channel = data.get('channel', channel)
+            replace = data.get('replace', replace)
             as_type = data.get('as_type', as_type)
         else:
             to_cache = data
@@ -351,7 +350,13 @@ class CompasServerProtocol(WebSocketServerProtocol):
         if id_ is None:
             id_ = id(to_cache)
 
-        # cache object...
+        # Remove an existing cached object using the same dkey
+        if replace and dkey is not None and dkey in self.cached_dkeys:
+            self.cached_dkeys[dkey]
+            id_old = self.dkey_to_id(dkey)
+            self.remove_cached(id_old)
+
+        # Cache object...
         self.setup_channel(channel)
         self.cached[channel][id_] = to_cache
 
@@ -412,6 +417,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
     def remove_cached(self, data):
         cached_ref_objs = data['to_remove']
+        cached_ref_objs = [cached_ref_objs] if not isinstance(cached_ref_objs, list) else cached_ref_objs
         print(f"Clear cache: {cached_ref_objs}")
 
         for _c_ref_obj in cached_ref_objs:
@@ -419,6 +425,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
                 if _c_ref_obj == 'all':
                     self.cached.clear()
                     self.logs = deepcopy(self.default_logs)
+                    return
                 elif _c_ref_obj in self.channels:
                     self.remove_channel(_c_ref_obj)
             elif isinstance(_c_ref_obj, dict):
@@ -609,7 +616,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
                 result = self.remove_cached(data)
 
             if data.get('request') == 'settings':
-                result = self.settings(data)
+                result = self.update_settings(data)
 
             if data.get('request') == 'get_channel_latest':
                 chnl = data['channel']
@@ -681,7 +688,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Start compas_struct_ml_proxy...')
-    parser.add_argument("-p", "--port", default=9000, type=int, action='store', dest='port', help='Port to connect...')
+    parser.add_argument("-p", "--port", default=cc.CLOUD_DEFAULTS['port'], type=int, action='store', dest='port', help='Port to connect...')
     args = parser.parse_args()
 
     try:
@@ -701,7 +708,7 @@ if __name__ == '__main__':
     coro = loop.create_server(factory, '127.0.0.1', 9000)
     server = loop.run_until_complete(coro)
     print("Starting compas_cloud server")
-    print("Listenning at %s:%s" % (ip, port))
+    print("Listening at %s:%s" % (ip, port))
 
     try:
         loop.run_forever()

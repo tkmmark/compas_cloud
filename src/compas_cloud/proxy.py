@@ -26,7 +26,7 @@ default_port = cc.CLOUD_DEFAULTS['port']
 default_host = cc.CLOUD_DEFAULTS['host']
 
 #FIXME
-from compas.utilities.encoders import DataDecoder, DataEncoder
+from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
 
 from compas_cloud.helpers.errors import ServerSideError
 from compas_cloud.helpers.retrievers import parse_caching_instructions
@@ -192,8 +192,7 @@ z
     # ==============================================================================
     # ==============================================================================
 
-    # other args: make_copy_first, set_to_temp?
-    # on copy?
+
     def _broadcast_server_error(self, received):
         if isinstance(received, dict) and 'error' in received:
             raise ServerSideError("".join(received['error']))

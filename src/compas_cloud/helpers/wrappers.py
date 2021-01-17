@@ -7,10 +7,11 @@ import time
 if compas.IPY:
     # FIXME: research and use a more specific ConnectionClosedError for the IronPython case
     import Rhino
-    from System import AggregateException as ConnectionClosedError 
+    from System import AggregateException as ConnectionClosedError
 else:
     from websockets.exceptions import ConnectionClosedError
 
+from compas_cloud.helpers.errors import ServerSideError
 
 def retry_if_exception(ex, max_retries, wait=0):
     def outer(func):

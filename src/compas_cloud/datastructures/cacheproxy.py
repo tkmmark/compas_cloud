@@ -1,3 +1,4 @@
+from compas_cloud.helpers.retrievers import parse_caching_instructions
 
 # ==============================================================================
 # CACHED OBJECT PROXY

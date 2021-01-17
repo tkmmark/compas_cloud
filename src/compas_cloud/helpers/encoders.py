@@ -7,12 +7,11 @@ from ast import literal_eval
 
 from datetime import datetime
 
-__all__ = ['DataDecoder', 'DataEncoder']
+__all__ = ['cls_from_dtype', 'DataDecoder', 'DataEncoder']
 
 
 class DecoderError(Exception):
     pass
-
 
 def cls_from_dtype(dtype):
     """Get the class object corresponding to a COMPAS data type specification.

@@ -11,6 +11,7 @@ import functools
 
 from multiprocessing import Queue, Process
 
+
 class Sessions_server(Sessions):
 
     socket_message = Queue()
@@ -31,8 +32,6 @@ class Sessions_server(Sessions):
             msg = self.socket_message.get()
             data = json.dumps({"listen": msg})
             await socket.send(data)
-
-
 
 class Server_Websockets():
 

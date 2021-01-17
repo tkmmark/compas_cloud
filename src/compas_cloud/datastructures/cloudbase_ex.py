@@ -1,4 +1,6 @@
+
 from compas.datastructures import Mesh
+from compas_cloud.datastructures.cloudbase import CloudBase
 
 class MeshExtended(CloudBase, Mesh):
     def dummy_numpy_using_method(self):

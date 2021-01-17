@@ -38,7 +38,6 @@ def get_function(data):
 # ==============================================================================
 # ==============================================================================
 
-
 # TODO: have defaults in settings file...
 def parse_caching_instructions(kwargs,
                                _cache=0, _dkey=None, _channel=0):
@@ -61,3 +60,8 @@ def parse_name(object_):
         return object_.__name__
     else:
         return repr(object_)
+
+def parse_kwargs(kwargs, name, default):
+    return kwargs.pop(name) if name in kwargs else default
+
+

@@ -6,6 +6,7 @@ import compas_cloud as cc
 DEFAULT_PORT = cc.CLOUD_DEFAULTS['port']
 DEFAULT_HOST = cc.CLOUD_DEFAULTS['host']
 
+from compas_cloud.helpers.retrievers import parse_kwargs
 
 def attempt_via_proxy(method_name):
     def outer(method):
@@ -16,7 +17,7 @@ def attempt_via_proxy(method_name):
             except (NameError, ImportError):
                 # print("Proxy used for '{}'".format(method_name))
                 if compas.IPY and cc.has_server(port=self._cloud_port):
-                    pself = self.to_cloud(cloud_port=self._cloud_port)
+                    pself = self.to_cloud(cloud_port=self._cloud_port, cloud_dkey=self._cloud_dkey, cloud_channel=self._cloud_channel)
                     res = getattr(pself, method_name)(*args, **kwargs)
                     self.data = pself.data
                     pself._destroy()
@@ -30,7 +31,6 @@ def attempt_via_proxy(method_name):
 class CloudBase(object):
 
     _UNWRAPPED_METHODS = ['from_cloud', 'to_cloud']
-    _ADDED_INIT_KWARGS = ['cloud_instance', 'cloud_autosolve', 'cloud_dkey', 'cloud_protocol', 'cloud_port']
 
     @staticmethod
     def _auto_cloud_method_factory(method):
@@ -70,8 +70,6 @@ class CloudBase(object):
         """Instantiation on cloud
         Automatic wrapping..."""
 
-        parse_kwargs = lambda kwargs, name, default: kwargs.pop(name) if name in kwargs else default
-
         cloud_autosolve = parse_kwargs(kwargs, 'cloud_autosolve', False)
         cloud_instance = parse_kwargs(kwargs, 'cloud_instance', False)
         cloud_dkey = parse_kwargs(kwargs, 'cloud_dkey', None)
@@ -81,21 +79,34 @@ class CloudBase(object):
 
         instc = super(CloudBase, cls).__new__(cls)
 
-        # initialisation manually invoke
-        instc.__init__(*args, **kwargs)
-        instc._cloud_port = cloud_port
+        if cloud_instance and cloud_autosolve:
+            raise
 
-        if not cloud_instance:
-            if cloud_autosolve:
-                instc._wrap_methods_for_cloud_autosolve()
-            return instc
-        elif cloud_instance and cc.has_server(port=cloud_port):
+        if cloud_instance and cc.has_server(port=cloud_port):
+            # initialisation manually invoke
+            instc.__init__(*args, **kwargs)
             p = cc.get_proxy(port=cloud_port)
             pinstc = p.cache(instc, dkey=cloud_dkey, protocol=cloud_protocol, channel=cloud_channel)
             return pinstc
+        else:
+            return instc
 
     def __init__(self, *args, **kwargs):
+
+        cloud_autosolve = parse_kwargs(kwargs, 'cloud_autosolve', False)
+        cloud_instance = parse_kwargs(kwargs, 'cloud_instance', False)
+        cloud_dkey = parse_kwargs(kwargs, 'cloud_dkey', None)
+        cloud_port = parse_kwargs(kwargs, 'cloud_port', DEFAULT_PORT)
+        cloud_channel = parse_kwargs(kwargs, 'cloud_channel', None)
+        cloud_protocol = parse_kwargs(kwargs, 'cloud_protocol', 2)
+
         super(CloudBase, self).__init__(*args, **kwargs)
+
+        if cloud_autosolve:
+            self._cloud_port = cloud_port
+            self._cloud_dkey = cloud_dkey
+            self._cloud_channel = cloud_channel
+            self._wrap_methods_for_cloud_autosolve()
 
     def to_cloud(self, cloud_dkey=None, cache_protocol=2, cloud_port=DEFAULT_PORT, cloud_channel=None):
         if cc.has_server(port=cloud_port):

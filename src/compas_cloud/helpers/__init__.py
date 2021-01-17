@@ -6,5 +6,6 @@ from .errors import *
 from .retrievers import *
 from .queries import *
 from .wrappers import *
+from .encoders import *
 
 __all__ = [name for name in dir() if not name.startswith('_')]
