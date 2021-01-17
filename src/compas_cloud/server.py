@@ -593,8 +593,10 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
         result = None  # in case custom request was sent
         try:
+            # ordering is important!
 
             if data.get('request') == 'cache_from_json':
+                # README: must precede 'cache'
                 result = self.cache_from_json(data)
 
             if data.get('request') in ['cache', 'cache_from_json'] and 'to_cache' in data:
@@ -676,6 +678,12 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Start compas_struct_ml_proxy...')
+    parser.add_argument("-p", "--port", default=9000, type=int, action='store', dest='port', help='Port to connect...')
+    args = parser.parse_args()
+
     try:
         import asyncio
     except ImportError:
@@ -687,12 +695,12 @@ if __name__ == '__main__':
     factory.protocol = CompasServerProtocol
 
     ip = '127.0.0.1'
-    port = 9000
+    port = args.port
 
     loop = asyncio.get_event_loop()
     coro = loop.create_server(factory, '127.0.0.1', 9000)
     server = loop.run_until_complete(coro)
-    print("starting compas_cloud server")
+    print("Starting compas_cloud server")
     print("Listenning at %s:%s" % (ip, port))
 
     try:
@@ -700,6 +708,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
     finally:
-        print("shuting down server")
+        print("Shuting down server")
         server.close()
         loop.close()
