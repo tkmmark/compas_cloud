@@ -88,8 +88,8 @@ def callback(k, xyz, crits, args):
 
 xyz, q, f, l, r = dr_numpy(vertices, edges, fixed, loads,
                             qpre, fpre, lpre,
-                            linit, E, radius,
-                            kmax=100, callback=callback)
+                            linit, E, radius, sleep=0.5,
+                            kmax=1000, callback=callback)
 
 
 

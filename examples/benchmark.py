@@ -20,7 +20,6 @@ end = time.time()
 print('transform 10k points 100 times (native python): ', end - start, 's')
 
 
-
 # USING CLOUD WITH CACHE
 
 from compas_cloud import Proxy
