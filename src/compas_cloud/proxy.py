@@ -116,33 +116,6 @@ z
 
     # ==============================================================================
     # ==============================================================================
-    # PARSERS
-    # ==============================================================================
-    # ==============================================================================
-
-    def parse_cached_wrappers(self, args, kwargs):
-
-        args = tuple([_arg._cached if is_cached_object_proxy(_arg) else _arg for _arg in args])
-        kwargs = {_k: _v._cached if is_cached_object_proxy(_k) else _v for _k, _v in kwargs.items()}
-
-        return args, kwargs
-
-    def parse_callbacks(self, args, kwargs):
-        """replace a callback functions with its cached reference then sending it to server"""
-        for i, a in enumerate(args):
-            cb = a
-            if callable(cb):
-                args[i] = {'callback': {'id': id(cb)}}
-                self.callbacks[id(cb)] = cb
-        for key in kwargs:
-            cb = kwargs[key]
-            if callable(cb):
-                kwargs[key] = {'callback': {'id': id(cb)}}
-                self.callbacks[id(cb)] = cb
-        return args, kwargs
-
-    # ==============================================================================
-    # ==============================================================================
     # SEND
     # ==============================================================================
     # ==============================================================================
@@ -186,6 +159,61 @@ z
     def send_only(self, data):
         istring = json.dumps([data], cls=DataEncoder)
         return self.client.send(istring)
+
+    # ==============================================================================
+    # ==============================================================================
+    # INPUTS HELPERS
+    # ==============================================================================
+    # ==============================================================================
+
+    # PARSERS
+    # ==============================================================================
+
+    def parse_cached_wrappers(self, args, kwargs):
+
+        args = tuple([_arg._cached if is_cached_object_proxy(_arg) else _arg for _arg in args])
+        kwargs = {_k: _v._cached if is_cached_object_proxy(_k) else _v for _k, _v in kwargs.items()}
+
+        return args, kwargs
+
+    def parse_callbacks(self, args, kwargs):
+        """replace a callback functions with its cached reference then sending it to server"""
+        for i, a in enumerate(args):
+            cb = a
+            if callable(cb):
+                args[i] = {'callback': {'id': id(cb)}}
+                self.callbacks[id(cb)] = cb
+        for key in kwargs:
+            cb = kwargs[key]
+            if callable(cb):
+                kwargs[key] = {'callback': {'id': id(cb)}}
+                self.callbacks[id(cb)] = cb
+        return args, kwargs
+
+    # INPUTS FORMATTING
+    # ==============================================================================
+
+    def _process_input_cached(self, cached):
+        if is_cached_object_proxy(cached):
+            cached = cached._cached,
+        elif not isinstance(cached, dict):
+            cached  = {'cached': cached}
+        return cached
+
+    def _process_input_dtype(self, dtype):
+        if isinstance(dtype, str):
+            dtype = {'dtype_': dtype}
+        elif dtype is not None:
+            if not isinstance(dtype, type):
+                dtype = dtype.__class__
+            dtype = {'dtype_': "{}/{}".format(".".join(self.__class__.__module__.split(".")[:-1]), self.__class__.__name__)}
+        return dtype
+
+    def _process_input_cache_protocol(self, cache_protocol):
+        if cache_protocol is None:
+            return 0
+        else:
+            return int(cache_protocol)
 
     # ==============================================================================
     # ==============================================================================
@@ -271,31 +299,9 @@ z
 
     # ==============================================================================
     # ==============================================================================
-    # CACHE MANAGEMENT
+    # CACHING
     # ==============================================================================
     # ==============================================================================
-
-    def _process_input_cached(self, cached):
-        if is_cached_object_proxy(cached):
-            cached = cached._cached,
-        elif not isinstance(cached, dict):
-            cached  = {'cached': cached}
-        return cached
-
-    def _process_input_dtype(self, dtype):
-        if isinstance(dtype, str):
-            dtype = {'dtype_': dtype}
-        elif dtype is not None:
-            if not isinstance(dtype, type):
-                dtype = dtype.__class__
-            dtype = {'dtype_': "{}/{}".format(".".join(self.__class__.__module__.split(".")[:-1]), self.__class__.__name__)}
-        return dtype
-
-    def _process_input_cache_protocol(self, cache_protocol):
-        if cache_protocol is None:
-            return 0
-        else:
-            return int(cache_protocol)
 
     def set_cache_protocol(self, protocol=2):
         # enforce cache protocol, useful for accessing attributes of cached proxy
@@ -309,10 +315,10 @@ z
 
     def cache(self, data, dkey=None, replace=False, protocol=2, channel=0, as_type=None):
         # protocol:
-        # -1 means discard
-        # 0 means no caching,
-        # 1 means basic dict
-        # 2 means wrapped object
+        # -1= discard (for methods that output results)
+        # 0 = no caching
+        # 1 = basic dict reference
+        # 2 = wrapped object
         as_type = self._process_input_dtype(as_type)
         """cache data or function to remote server and return a reference of it"""
         idict = {'request': 'cache'}
@@ -352,23 +358,11 @@ z
             result = make_cached_object_proxy(proxy=self, cached_obj_data=result)
         return result
 
-    def get_channel_latest(self, channel=None, as_cache=False, as_type=None):
-
-        idict = {'request': 'get_channel_latest',
-                 'channel': channel,
-                 'as_cache': as_cache,
-                 'as_type': as_type}
-
-        res = self.send(idict)
-
-        self._broadcast_server_error(res)
-
-        if as_cache and is_cached_object_proxy_data(res):
-            res = make_cached_object_proxy(proxy=self, cached_obj_data=res)
-        else:
-            res = res['get']
-
-        return res
+    # ==============================================================================
+    # ==============================================================================
+    # GETTING
+    # ==============================================================================
+    # ==============================================================================
 
     def get(self, cached, as_type=None, as_cache=False):
 
@@ -390,15 +384,23 @@ z
 
         return res
 
-    def view(self):
-        """cache data or function to remote server and return a reference of it"""
-        idict = {'request': 'view'}
-        return self.send(idict)
+    def get_channel_latest(self, channel=None, as_cache=False, as_type=None):
 
-    def view_dkeys(self):
-        """get content of a cached object stored remotely"""
-        idict = {'request': 'view_dkeys'}
-        return self.send(idict)
+        idict = {'request': 'get_channel_latest',
+                 'channel': channel,
+                 'as_cache': as_cache,
+                 'as_type': as_type}
+
+        res = self.send(idict)
+
+        self._broadcast_server_error(res)
+
+        if as_cache and is_cached_object_proxy_data(res):
+            res = make_cached_object_proxy(proxy=self, cached_obj_data=res)
+        else:
+            res = res['get']
+
+        return res
 
     def get_cached_timestamps(self, cached, channels=None):
 
@@ -409,6 +411,24 @@ z
 
         return res
 
+    # ==============================================================================
+    # ==============================================================================
+    # QUERIES
+    # ==============================================================================
+    # ==============================================================================
+
+    def view(self):
+        """cache data or function to remote server and return a reference of it"""
+        idict = {'request': 'view'}
+        return self.send(idict)
+
+    def view_dkeys(self):
+        """get content of a cached object stored remotely"""
+        idict = {'request': 'view_dkeys'}
+        return self.send(idict)
+
+    # ==============================================================================
+
     def has_cached(self, cached):
         cached = self._process_input_cached(cached)
 
@@ -416,6 +436,12 @@ z
                  'get': cached}
         res = self.send(idict)
         return res
+
+    # ==============================================================================
+    # ==============================================================================
+    # REMOVING
+    # ==============================================================================
+    # ==============================================================================
 
     def remove_cached(self, cached=[], channels=[], all_=False):
         idict = {'request': 'remove_cached'}
