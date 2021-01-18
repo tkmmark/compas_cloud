@@ -39,11 +39,14 @@ def is_static_method(cls_, name, value=None):
                     return True
     return False
 
+
 def is_property(cls_, name):
     return hasattr(cls_, name) and isinstance(getattr(cls_, name), property)
 
+
 def is_builtins_instance(data):
     return 'builtin' in data.__class__.__module__
+
 
 def is_special_method(name, private=True, dunder=True):
     is_dunder = name.startswith('__') and name.endswith('__')

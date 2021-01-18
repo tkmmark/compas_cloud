@@ -323,12 +323,15 @@ class CompasServerProtocol(WebSocketServerProtocol):
     # Cached Objects
     # ==============================================================================
 
-    def cache_from_json(self, data):
+    def cache_from_file(self, data):
 
         dtype = data.get('dtype_')
         fp = data.get('file_path')
         cls_ = cls_from_dtype(dtype)
-        data['to_cache'] = cls_.from_json(fp)
+
+        mtd = data.get('method')
+        mtd_ = getattr(cls_, mtd)
+        data['to_cache'] = mtd_(fp)
 
     def cache(self, data,
               id_=None, dkey=None, cache_protocol=1, channel=0,
@@ -350,7 +353,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
         if id_ is None:
             id_ = id(to_cache)
 
-        # Remove an existing cached object using the same dkey
+        # Remove an existing cached object with the same dkey (if requested)
         if replace and dkey is not None and dkey in self.cached_dkeys:
             self.cached_dkeys[dkey]
             id_old = self.dkey_to_id(dkey)
@@ -433,19 +436,32 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
     # ==============================================================================
     # ==============================================================================
-    # FUNCTIONS
+    # EXECUTING METHODS / FUNCTIONS
     # ==============================================================================
     # ==============================================================================
 
+    # ==============================================================================
+    # Helpers
+    # ==============================================================================
+
     def _resolve_settings(self, settings_key, value):
+        # Use saved override settings if available
+        # Useful especially for cases when working with ObjectProxy where arguments cannot be provided
         value_ = value if settings_key not in self.settings else self.settings[settings_key]
         value_ = value_ or value
         return value_
 
-    def _parse_output(self, output, data):
+    def _prepare_namespace(self, reset=False):
+        ns = self.sandbox
+        if reset:
+            ns.clear()
+        ns.update({'_server': self})
+        return ns
 
+    def _parse_output(self, output, data):
         # check for settings override
-        cache_protocol = self._resolve_settings('cache_protocol', data['cache']) 
+        cache_protocol = self._resolve_settings('cache_protocol', data['cache'])
+
         # single-value output that are instances of builtins are always returned without caching
         if is_builtins_instance(output):
             cache_protocol = 0
@@ -475,6 +491,10 @@ class CompasServerProtocol(WebSocketServerProtocol):
         print('finished in: {}s'.format(t))
 
         return res
+
+    # ==============================================================================
+    # Main Execution Types
+    # ==============================================================================
 
     def execute_function(self, data):
         """execute corresponding binded functions with received arguments"""
@@ -511,17 +531,11 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
         return res
 
-    def prepare_namespace(self, reset=False):
-        ns = self.sandbox
-        if reset:
-            ns.clear()
-        ns.update({'_server': self})
-        return ns
-
     def execute_expression(self, data):
-        """provides a sandbox environment for execution of code in server-side"""
-
-        ns = self.prepare_namespace(data['reset'])
+        """provides a sandbox environment for execution of code in server-side
+        User may access server via '_sever'
+        """
+        ns = self._prepare_namespace(data['reset'])
         code = compile(data['expression'], '<string>', 'exec')
         exec(code, ns)
 
@@ -602,11 +616,11 @@ class CompasServerProtocol(WebSocketServerProtocol):
         try:
             # ordering is important!
 
-            if data.get('request') == 'cache_from_json':
+            if data.get('request') == 'cache_from_file':
                 # README: must precede 'cache'
-                result = self.cache_from_json(data)
+                result = self.cache_from_file(data)
 
-            if data.get('request') in ['cache', 'cache_from_json'] and 'to_cache' in data:
+            if data.get('request').startswith('cache') and 'to_cache' in data:
                 result = self.cache(data)
 
             if data.get('request') == 'cache' and 'func_to_cache' in data:
@@ -619,11 +633,13 @@ class CompasServerProtocol(WebSocketServerProtocol):
                 result = self.update_settings(data)
 
             if data.get('request') == 'get_channel_latest':
+                # README: must precede 'get'
                 chnl = data['channel']
                 id_ = list(self.cached[chnl].keys())[-1]
                 data['get'] = {'cached': id_}
 
             if 'get' in data:
+                # README: must precede 'run_function' & 'run_method'
                 if data.get('request') == 'has_cached':
                     result = self.has_cached(data['get'])
                 elif data.get('request') == 'get_timestamps':

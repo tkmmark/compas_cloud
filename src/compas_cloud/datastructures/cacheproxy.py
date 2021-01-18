@@ -109,8 +109,10 @@ class MetaCachedObjectProxyClass(type):
                     _fget = property(MetaCachedObjectProxyClass.proxy_getter_factory(_name))
                     setattr(cls, _name, _fget.setter(_fset))
 
+            # Store created ObjectProxy classes
             MetaCachedObjectProxyClass._classes[name] = cls
 
+            # Instantiate class
             super(MetaCachedObjectProxyClass, cls).__init__(name, bases, dct)
 
     def __call__(cls, cached, *args, **kwargs):

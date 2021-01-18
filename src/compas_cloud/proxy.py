@@ -72,7 +72,6 @@ class Proxy():
         p = Proxy()
         dr_numpy = p.package('compas.numerical.dr_numpy')
 
-z
     """
 
     def __init__(self, host=default_host, port=default_port, background=True, errorHandler=None, restart=False):
@@ -81,7 +80,6 @@ z
         self.host = host
         self.port = port
         self.background = background
-        print(host, port)
         self.client = self.try_reconnect()
         if self.client and restart:
             self.shutdown()
@@ -342,9 +340,10 @@ z
 
         return cached
 
-    def cache_from_json(self, file_path, dtype, dkey=None, replace=False, cache=2, channel=0):
+    def cache_from_file(self, file_path, dtype, method='from_json', dkey=None, replace=False, cache=2, channel=0):
 
-        idict = {'request': 'cache_from_json',
+        idict = {'request': 'cache_from_file',
+                 'method': method,
                  'file_path': file_path,
                  'dtype_': dtype,
                  'dkey': dkey, 'channel': channel,

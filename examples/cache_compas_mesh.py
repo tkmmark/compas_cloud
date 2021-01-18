@@ -4,6 +4,6 @@ from compas_cloud import Proxy
 p = Proxy()
 
 mesh = Mesh()
-pmesh = p.cache(mesh, as_type='compas.datastructures/Mesh')
+pmesh = p.cache(mesh)
 
 print(pmesh)

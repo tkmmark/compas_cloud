@@ -10,15 +10,13 @@ DEFAULT_HOST = cc.CLOUD_DEFAULTS['host']
 from compas_cloud.helpers.retrievers import parse_kwargs
 from compas_cloud.helpers.queries import is_static_method, is_class_method, is_property, is_special_method
 
-# def attempt_via_proxy(method_name):
+
 def attempt_via_proxy(method):
     method_name = method.__name__
     def inner(self, *args, **kwargs):
         try:
             res = method(self, *args, **kwargs)
-            # print("No proxy needed for '{}'".format(method_name))
         except (NameError, ImportError):
-            # print("Proxy used for '{}'".format(method_name))
             if compas.IPY and cc.has_server(port=self._cloud_port):
                 pself = self.to_cloud(cloud_port=self._cloud_port, cloud_dkey=self._cloud_dkey, cloud_channel=self._cloud_channel)
                 res = getattr(pself, method_name)(*args, **kwargs)
@@ -28,6 +26,7 @@ def attempt_via_proxy(method):
                 res = None
         return res
     return inner
+
 
 class CloudBase(object):
 
