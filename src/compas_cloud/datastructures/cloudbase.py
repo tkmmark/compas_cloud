@@ -3,10 +3,12 @@ from types import MethodType
 import compas
 
 import compas_cloud as cc
+CLOUDBASE_ATTRS = cc.CLOUDBASE_ATTRS
 DEFAULT_PORT = cc.CLOUD_DEFAULTS['port']
 DEFAULT_HOST = cc.CLOUD_DEFAULTS['host']
 
 from compas_cloud.helpers.retrievers import parse_kwargs
+from compas_cloud.helpers.queries import is_static_method, is_class_method, is_property, is_special_method
 
 def attempt_via_proxy(method_name):
     def outer(method):
@@ -30,8 +32,6 @@ def attempt_via_proxy(method_name):
 
 class CloudBase(object):
 
-    _UNWRAPPED_METHODS = ['from_cloud', 'to_cloud']
-
     @staticmethod
     def _auto_cloud_method_factory(method):
         @attempt_via_proxy(method.__name__)
@@ -41,30 +41,29 @@ class CloudBase(object):
 
     # set wrapped method as an instance method so it will not affect other objects in the run-time instance
     def _wrap_methods_for_cloud_autosolve(self):
-        from compas_cloud.helpers.queries import is_static_method
-        from compas_cloud.helpers.queries import is_class_method
         # method = filter methods
-        mtds_to_wrap = []
+        attrs_to_wrap = []
         cls_ = self.__class__
-        for _mtd_name in dir(self):
-            _mtd_is_prop = hasattr(cls_, _mtd_name) and isinstance(getattr(cls_, _mtd_name), property)
-            if _mtd_name not in self._UNWRAPPED_METHODS and not _mtd_is_prop:
-                _mtd = getattr(self, _mtd_name)
-                if callable(_mtd) and not _mtd_name.startswith('_') and \
-                   not is_static_method(cls_, _mtd_name) and not is_class_method(cls_, _mtd_name):
-                    mtds_to_wrap.append((_mtd_name, _mtd))
+        for _attr_name in dir(self):
+            if _attr_name not in CLOUDBASE_ATTRS and not is_property(cls_, _attr_name):
+                _attr = getattr(self, _attr_name)
+                if callable(_attr) and \
+                   not is_special_method(_attr_name, private=True, dunder=True) and \
+                   not is_static_method(cls_, _attr_name) and \
+                   not is_class_method(cls_, _attr_name):
+                    attrs_to_wrap.append((_attr_name, _attr))
 
         # for each method in methods
-        for _mtd_name, _mtd in mtds_to_wrap:
+        for _attr_name, _attr in attrs_to_wrap:
             # rename original method
-            setattr(self, "_" + _mtd_name, _mtd)
+            setattr(self, "_" + _attr_name, _attr)
             # create new method with wrapper decorator
-            _wrpd_mtd = self.__class__._auto_cloud_method_factory(_mtd)
+            _wrpd_attr = self.__class__._auto_cloud_method_factory(_attr)
             if compas.PY3:
-                _wrpd_mtd = MethodType(_wrpd_mtd, self)
+                _wrpd_attr = MethodType(_wrpd_attr, self)
             else:
-                _wrpd_mtd = MethodType(_wrpd_mtd, self, cls_)
-            setattr(self, _mtd_name, _wrpd_mtd)
+                _wrpd_attr = MethodType(_wrpd_attr, self, cls_)
+            setattr(self, _attr_name, _wrpd_attr)
 
     def __new__(cls, *args, **kwargs):
         """Instantiation on cloud
@@ -126,9 +125,6 @@ class CloudBase(object):
             return retrieved
         else:
             raise RuntimeError('No server available...')
-
-
-
 
 # ==============================================================================
 # Main

@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import compas
 
-CLOUD_DEFAULTS = {'host': '127.0.0.1', 'port': 9000}
+from .settings import CLOUD_DEFAULTS, CLOUDBASE_ATTRS, DUNDERS_NOT_WRAPPED
 
 from .helpers import *
 from .datastructures import *

@@ -1,35 +1,9 @@
+from compas_cloud import DUNDERS_NOT_WRAPPED
 from compas_cloud.helpers.retrievers import parse_caching_instructions
 
 # ==============================================================================
 # CACHED OBJECT PROXY
 # ==============================================================================
-
-_ATTRS_IGNORED =    ['__class__',
-                     '__delattr__',
-                     '__dir__',
-                     '__dict__',
-                     '__doc__',
-                     # '__eq__',
-                     '__format__',
-                     # '__ge__',
-                     '__getattribute__',
-                     # '__gt__',
-                     '__hash__',
-                     '__init__',
-                     '__init_subclass__',
-                     # '__le__',
-                     # '__lt__',
-                     # '__ne__',
-                     '__new__',
-                     '__reduce__',
-                     '__reduce_ex__',
-                     '__repr__',
-                     '__setattr__',
-                     '__sizeof__',
-                     '__str__',
-                     '__subclasshook__',
-                     '__repr__']
-
 
 def proxy_object_name_decorator(text):
     if text.count('\n') == 0:
@@ -161,7 +135,7 @@ def make_cached_object_proxy(proxy, cached_obj_data):
     name                    = proxy_object_name_decorator(cached_obj_data['class_name'])
     cached_ref_obj          = {'cached': cached_obj_data['cached']}
 
-    attrs                   = [(_a, _v) for _a, _v in cached_obj_data['attributes'] if _a not in _ATTRS_IGNORED]
+    attrs                   = [(_a, _v) for _a, _v in cached_obj_data['attributes'] if _a not in DUNDERS_NOT_WRAPPED]
     CachedObjectProxyClass  = MetaCachedObjectProxyClass(name, (object,), {'__metaclass__': MetaCachedObjectProxyClass},
                                                          proxy=proxy, attrs=attrs)
     cached_obj_proxy        = CachedObjectProxyClass(cached=cached_ref_obj)
