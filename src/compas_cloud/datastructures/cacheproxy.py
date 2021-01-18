@@ -1,16 +1,10 @@
 from compas_cloud import DUNDERS_NOT_WRAPPED
 from compas_cloud.helpers.retrievers import parse_caching_instructions
 
+
 # ==============================================================================
 # CACHED OBJECT PROXY
 # ==============================================================================
-
-def proxy_object_name_decorator(text):
-    if text.count('\n') == 0:
-        text_ = '<< CACHED OBJECT PROXY: ' + text + ' >>'
-    else:
-        text_ = '<< CACHED OBJECT PROXY:\n' + text + '\n>>'
-    return text_
 
 
 class MetaCachedObjectProxyClass(type):
@@ -20,8 +14,6 @@ class MetaCachedObjectProxyClass(type):
     def proxy_getter_factory(name, is_property=True):
         def proxy_getter(self):
             self._assert_server_has_cached()
-            # TODO: allow caching of output somehow...
-            # cache, dkey, channel = parse_caching_instructions(kwargs)
             cache, dkey, channel = None, None, None
             pass_server = False
             return self._proxy.run_attribute(self._cached, (name, 'getter'),
@@ -53,10 +45,6 @@ class MetaCachedObjectProxyClass(type):
                                              pass_server,
                                              *args, **kwargs)
         return proxy_method
-
-    # def set_class_construction_data(cls, proxy, attrs):
-    #     cls._proxy = proxy
-    #     cls._attrs = attrs
 
     def build_core_cached_proxy_methods(cls):
 
@@ -131,10 +119,17 @@ class MetaCachedObjectProxyClass(type):
         return obj
 
 
+def proxy_object_name_decorator(text):
+    if text.count('\n') == 0:
+        text_ = '<< CACHED OBJECT PROXY: ' + text + ' >>'
+    else:
+        text_ = '<< CACHED OBJECT PROXY:\n' + text + '\n>>'
+    return text_
+
+
 def make_cached_object_proxy(proxy, cached_obj_data):
     name                    = proxy_object_name_decorator(cached_obj_data['class_name'])
     cached_ref_obj          = {'cached': cached_obj_data['cached']}
-
     attrs                   = [(_a, _v) for _a, _v in cached_obj_data['attributes'] if _a not in DUNDERS_NOT_WRAPPED]
     CachedObjectProxyClass  = MetaCachedObjectProxyClass(name, (object,), {'__metaclass__': MetaCachedObjectProxyClass},
                                                          proxy=proxy, attrs=attrs)

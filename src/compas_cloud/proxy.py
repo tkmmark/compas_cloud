@@ -26,6 +26,7 @@ default_port = cc.CLOUD_DEFAULTS['port']
 default_host = cc.CLOUD_DEFAULTS['host']
 
 #FIXME
+# at the moment, this is necessary
 from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
 
 from compas_cloud.helpers.errors import ServerSideError
@@ -192,7 +193,6 @@ z
     # ==============================================================================
     # ==============================================================================
 
-
     def _broadcast_server_error(self, received):
         if isinstance(received, dict) and 'error' in received:
             raise ServerSideError("".join(received['error']))
@@ -285,7 +285,7 @@ z
     def _process_input_dtype(self, dtype):
         if isinstance(dtype, str):
             dtype = {'dtype_': dtype}
-        else:
+        elif dtype is not None:
             if not isinstance(dtype, type):
                 dtype = dtype.__class__
             dtype = {'dtype_': "{}/{}".format(".".join(self.__class__.__module__.split(".")[:-1]), self.__class__.__name__)}

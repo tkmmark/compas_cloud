@@ -54,6 +54,7 @@ def parse_caching_instructions(kwargs,
 
     return cache, dkey, channel
 
+
 def parse_name(object_):
     if hasattr(object_, 'name'):
         return object_.name
@@ -62,7 +63,6 @@ def parse_name(object_):
     else:
         return repr(object_)
 
+
 def parse_kwargs(kwargs, name, default):
     return kwargs.pop(name) if name in kwargs else default
-
-

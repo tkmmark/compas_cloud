@@ -10,38 +10,37 @@ DEFAULT_HOST = cc.CLOUD_DEFAULTS['host']
 from compas_cloud.helpers.retrievers import parse_kwargs
 from compas_cloud.helpers.queries import is_static_method, is_class_method, is_property, is_special_method
 
-def attempt_via_proxy(method_name):
-    def outer(method):
-        def inner(self, *args, **kwargs):
-            try:
-                res = method(self, *args, **kwargs)
-                # print("No proxy needed for '{}'".format(method_name))
-            except (NameError, ImportError):
-                # print("Proxy used for '{}'".format(method_name))
-                if compas.IPY and cc.has_server(port=self._cloud_port):
-                    pself = self.to_cloud(cloud_port=self._cloud_port, cloud_dkey=self._cloud_dkey, cloud_channel=self._cloud_channel)
-                    res = getattr(pself, method_name)(*args, **kwargs)
-                    self.data = pself.data
-                    pself._destroy()
-                else:
-                    res = None
-            return res
-        return inner
-    return outer
-
+# def attempt_via_proxy(method_name):
+def attempt_via_proxy(method):
+    method_name = method.__name__
+    def inner(self, *args, **kwargs):
+        try:
+            res = method(self, *args, **kwargs)
+            # print("No proxy needed for '{}'".format(method_name))
+        except (NameError, ImportError):
+            # print("Proxy used for '{}'".format(method_name))
+            if compas.IPY and cc.has_server(port=self._cloud_port):
+                pself = self.to_cloud(cloud_port=self._cloud_port, cloud_dkey=self._cloud_dkey, cloud_channel=self._cloud_channel)
+                res = getattr(pself, method_name)(*args, **kwargs)
+                self.data = pself.data
+                pself._destroy()
+            else:
+                res = None
+        return res
+    return inner
 
 class CloudBase(object):
 
     @staticmethod
     def _auto_cloud_method_factory(method):
-        @attempt_via_proxy(method.__name__)
+        @attempt_via_proxy
         def wrapped_method(self, *args, **kwargs):
             return method(*args, **kwargs)
         return wrapped_method
 
     # set wrapped method as an instance method so it will not affect other objects in the run-time instance
     def _wrap_methods_for_cloud_autosolve(self):
-        # method = filter methods
+
         attrs_to_wrap = []
         cls_ = self.__class__
         for _attr_name in dir(self):
