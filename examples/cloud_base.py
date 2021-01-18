@@ -31,7 +31,6 @@ mesh = MeshExtended(cloud_autosolve=True, cloud_port=9000)
 #        from numpy import random
 #        return random.rand(3, 3).tolist()
 print(mesh.dummy_numpy_using_method())
-exit()
 # [[0.56646419450045249, 0.65757137924650677, 0.52258317065161219], ..., ...]]
 
 
@@ -45,6 +44,6 @@ res = pmesh.to_vertices_and_faces(cache=0)
 MeshExtended.from_vertices_and_faces(*res)
 
 
-mesh_ = MeshExtended.from_cloud('mesh', cloud_port=9001)
+mesh_ = MeshExtended.from_cloud('mesh', cloud_port=9000)
 print(mesh_.vertices_attributes(names='xyz'))
 # [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
