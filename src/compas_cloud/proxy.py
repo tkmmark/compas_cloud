@@ -285,6 +285,10 @@ z
     def _process_input_dtype(self, dtype):
         if isinstance(dtype, str):
             dtype = {'dtype_': dtype}
+        else:
+            if not isinstance(dtype, type):
+                dtype = dtype.__class__
+            dtype = {'dtype_': "{}/{}".format(".".join(self.__class__.__module__.split(".")[:-1]), self.__class__.__name__)}
         return dtype
 
     def _process_input_cache_protocol(self, cache_protocol):
