@@ -38,7 +38,7 @@ def retry_if_exception(ex, max_retries, wait=0):
     return outer
 
 
-def try_reconnect_to_server(send):
+def reconnect_if_disconnected(send):
     def _send(self, data):
         x = 2
         # return send(self, data)
@@ -46,7 +46,8 @@ def try_reconnect_to_server(send):
             try:
                 return send(self, data)
             except ConnectionClosedError as e:
-                ("Unable to connect with server; trying to reconnect now...")
+                print("Unable to connect with server; trying to reconnect now...")
+
                 self.reconnect()
                 x -= 1
         raise RuntimeError("unable to connect with server")

@@ -16,7 +16,6 @@ result = transform_points_numpy(pts_cache, T) # call the function through proxy
 print(result) # will print: [[100.0, 0.0 ,0.0], [101.0, 0.0, 0.0]]
 
 
-
 # CACHING RETURNED DATA
 
 transform_points_numpy = proxy.function('compas.geometry.transform_points_numpy', cache=True)

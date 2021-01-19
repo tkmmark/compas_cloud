@@ -4,6 +4,8 @@ from compas_cloud import Proxy
 p = Proxy()
 
 mesh = Mesh()
-pmesh = p.cache(mesh)
 
-print(pmesh)
+pform = p.cache(mesh, as_type='compas_tna.diagrams/FormDiagram')
+
+print(type(mesh))
+print(type(pform))

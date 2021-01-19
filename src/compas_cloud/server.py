@@ -26,6 +26,8 @@ from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncod
 from compas_cloud.helpers.retrievers import get_function, parse_name
 from compas_cloud.helpers.queries import is_class_method, is_static_method, is_builtins_instance
 
+from compas_cloud.sessions import Sessions
+
 
 class CompasServerProtocol(WebSocketServerProtocol):
     """The CompasServerProtocol defines the behaviour of compas cloud server"""
@@ -548,7 +550,6 @@ class CompasServerProtocol(WebSocketServerProtocol):
     # ==============================================================================
 
     def sessions_alive(self):
-        from compas_struct_ml_proxy._cloud.sessions import Sessions
         return isinstance(self.sessions, Sessions)
 
     def control(self, data):
@@ -620,7 +621,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
                 # README: must precede 'cache'
                 result = self.cache_from_file(data)
 
-            if data.get('request').startswith('cache') and 'to_cache' in data:
+            if data.get('request', '').startswith('cache') and 'to_cache' in data:
                 result = self.cache(data)
 
             if data.get('request') == 'cache' and 'func_to_cache' in data:

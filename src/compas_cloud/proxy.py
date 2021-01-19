@@ -31,7 +31,7 @@ from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncod
 
 from compas_cloud.helpers.errors import ServerSideError
 from compas_cloud.helpers.retrievers import parse_caching_instructions
-from compas_cloud.helpers.wrappers import retry_if_exception, try_reconnect_to_server
+from compas_cloud.helpers.wrappers import retry_if_exception, reconnect_if_disconnected
 from compas_cloud.helpers.queries import is_cached_object_proxy, is_cached_object_proxy_data
 from compas_cloud.datastructures.cacheproxy import make_cached_object_proxy
 
@@ -118,7 +118,7 @@ class Proxy():
     # ==============================================================================
     # ==============================================================================
 
-    @try_reconnect_to_server
+    @reconnect_if_disconnected
     def send(self, data):
         """encode given data before sending to remote server then parse returned result"""
 
@@ -126,7 +126,6 @@ class Proxy():
             print("There is no connected client, try to restart proxy")
             return
 
-        from pprint import pprint
         istring = json.dumps([data], cls=DataEncoder)
 
         self.client.send(istring)
@@ -340,9 +339,12 @@ class Proxy():
 
         return cached
 
-    def cache_from_file(self, file_path, dtype, method='from_json', dkey=None, replace=False, cache=2, channel=0):
+    def cache_from_file(self, file_path,
+                        dtype, loader=None, method='from_json',
+                        dkey=None, replace=False, cache=2, channel=0):
 
         idict = {'request': 'cache_from_file',
+                 # 'loader': loader, # TODO: for e.g. Pickle.loads
                  'method': method,
                  'file_path': file_path,
                  'dtype_': dtype,
@@ -485,7 +487,7 @@ class Proxy():
         env = compas._os.prepare_environment()
 
         args = [self._python, '-m',
-                'compas_cloud.server', str(self.port)]
+                'compas_cloud.server', '-p', str(self.port)]
 
         if self.background:
             print("Starting new cloud server in background at {}:{}".format(
@@ -519,7 +521,7 @@ class Proxy():
                         if err:
                             raise RuntimeError(err.decode())
                         raise RuntimeError(
-                            'subprocess terminated, reason unknown')
+                            'Subprocess terminated, reason unknown')
 
                 count -= 1
                 print(e)
@@ -530,7 +532,7 @@ class Proxy():
         if not success:
             raise RuntimeError("The server is not available.")
         else:
-            print("server started with port", self.port)
+            print("Server started with port", self.port)
 
         return client
 
@@ -566,9 +568,9 @@ class Proxy():
         if self.client:
             if self.send_only({'control': 'shutdown'}):
                 self.client = None
-                print("server will shutdown and proxy client disconnected.")
+                print("Server will shutdown and proxy client disconnected...")
         else:
-            print("there is already no connected client")
+            print("There is already no connected client...")
 
 
 # ==============================================================================
