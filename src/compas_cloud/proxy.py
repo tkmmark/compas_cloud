@@ -29,10 +29,10 @@ default_host = cc.CLOUD_DEFAULTS['host']
 # at the moment, this is necessary
 from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
 
-
 from compas_cloud.helpers.utils import parse_caching_instructions
 from compas_cloud.helpers.utils import is_cached_object_proxy, is_cached_object_proxy_data
 from compas_cloud.helpers.handlers import retry_if_exception, reconnect_if_disconnected
+from compas_cloud.helpers.handlers import dual_class_instance_method
 from compas_cloud.helpers.handlers import ServerSideError
 from compas_cloud.datastructures.cacheproxy import make_cached_object_proxy
 
@@ -467,14 +467,24 @@ class Proxy():
     # Utilities
     # ==============================================================================
 
-    @classmethod
-    def has_server(cls, host=default_host, port=default_port):
-        """see if there is an existing server"""
+    @dual_class_instance_method
+    def has_server(cls_or_self, host=None, port=None):
+        """Check for an existing server connection"""
         try:
+            if isinstance(cls_or_self, Proxy):
+                # is accessed via instance
+                host = host or cls_or_self.host
+                port = port or cls_or_self.port
+            elif isinstance(cls_or_self, type):
+                # is accessed as class method
+                host = host or default_host
+                port = port or default_port
             client = Client(host, port)
         except Exception:
+            print("No server found at {}:{}.".format(host, port))
             return False
-        return True
+        print("Found server at {}:{}.".format(host, port))
+        return client
 
     def check(self):
         """check if server connection is good"""

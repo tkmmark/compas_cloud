@@ -56,3 +56,17 @@ def reconnect_if_disconnected(send):
                 x -= 1
         raise RuntimeError("unable to connect with server")
     return _send
+
+
+class dual_class_instance_method(object):
+    def __init__(self, method):
+        self.method = method
+
+    def __get__(self, obj=None, cls=None):
+        @wraps(self.method)
+        def _inner(*args, **kwargs):
+            if obj is not None:
+                return self.method(obj, *args, **kwargs)
+            else:
+                return self.method(cls, *args, **kwargs)
+        return _inner
