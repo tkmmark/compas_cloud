@@ -43,7 +43,6 @@ pmesh.add_vertex(x=1., y=1., z=1.)
 res = pmesh.to_vertices_and_faces(cache=0)
 MeshExtended.from_vertices_and_faces(*res)
 
-
 mesh_ = MeshExtended.from_cloud('mesh', cloud_port=9000)
 print(mesh_.vertices_attributes(names='xyz'))
 # [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]

@@ -1,5 +1,5 @@
 from compas_cloud import DUNDERS_NOT_WRAPPED
-from compas_cloud.helpers.retrievers import parse_caching_instructions
+from compas_cloud.helpers.utils import parse_caching_instructions
 
 
 # ==============================================================================

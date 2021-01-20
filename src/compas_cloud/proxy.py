@@ -29,10 +29,11 @@ default_host = cc.CLOUD_DEFAULTS['host']
 # at the moment, this is necessary
 from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
 
-from compas_cloud.helpers.errors import ServerSideError
-from compas_cloud.helpers.retrievers import parse_caching_instructions
-from compas_cloud.helpers.wrappers import retry_if_exception, reconnect_if_disconnected
-from compas_cloud.helpers.queries import is_cached_object_proxy, is_cached_object_proxy_data
+
+from compas_cloud.helpers.utils import parse_caching_instructions
+from compas_cloud.helpers.utils import is_cached_object_proxy, is_cached_object_proxy_data
+from compas_cloud.helpers.handlers import retry_if_exception, reconnect_if_disconnected
+from compas_cloud.helpers.handlers import ServerSideError
 from compas_cloud.datastructures.cacheproxy import make_cached_object_proxy
 
 # ==============================================================================

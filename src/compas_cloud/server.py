@@ -23,8 +23,8 @@ from compas.utilities import timestamp
 
 import compas_cloud as cc
 from compas_cloud.helpers.encoders import cls_from_dtype, DataDecoder, DataEncoder
-from compas_cloud.helpers.retrievers import get_function, parse_name
-from compas_cloud.helpers.queries import is_class_method, is_static_method, is_builtins_instance
+from compas_cloud.helpers.utils import get_function, parse_name
+from compas_cloud.helpers.utils import is_class_method, is_static_method, is_builtins_instance
 
 from compas_cloud.sessions import Sessions
 

@@ -7,8 +7,8 @@ CLOUDBASE_ATTRS = cc.CLOUDBASE_ATTRS
 DEFAULT_PORT = cc.CLOUD_DEFAULTS['port']
 DEFAULT_HOST = cc.CLOUD_DEFAULTS['host']
 
-from compas_cloud.helpers.retrievers import parse_kwargs
-from compas_cloud.helpers.queries import is_static_method, is_class_method, is_property, is_special_method
+from compas_cloud.helpers.utils import parse_kwargs
+from compas_cloud.helpers.utils import is_static_method, is_class_method, is_property, is_special_method
 
 
 def attempt_via_proxy(method):

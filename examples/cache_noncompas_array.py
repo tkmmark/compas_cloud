@@ -16,6 +16,9 @@ print(ar2)
 """
 
 p.set_cache_protocol(2)
+# automatically cache all instances of non-builtin types
+# useful especially for calling methods by operators (e.g. +, -, etc) or accessing properties
+
 ar3 = ar1.dot(ar2)
 print(ar3)
 """

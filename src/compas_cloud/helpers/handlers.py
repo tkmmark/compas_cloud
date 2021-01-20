@@ -11,7 +11,12 @@ if compas.IPY:
 else:
     from websockets.exceptions import ConnectionClosedError
 
-from compas_cloud.helpers.errors import ServerSideError
+
+__all__ = ['ServerSideError', 'retry_if_exception', 'reconnect_if_disconnected']
+
+
+class ServerSideError(Exception):
+    pass
 
 def retry_if_exception(ex, max_retries, wait=0):
     def outer(func):
@@ -41,13 +46,12 @@ def retry_if_exception(ex, max_retries, wait=0):
 def reconnect_if_disconnected(send):
     def _send(self, data):
         x = 2
-        # return send(self, data)
+
         while x:
             try:
                 return send(self, data)
             except ConnectionClosedError as e:
                 print("Unable to connect with server; trying to reconnect now...")
-
                 self.reconnect()
                 x -= 1
         raise RuntimeError("unable to connect with server")

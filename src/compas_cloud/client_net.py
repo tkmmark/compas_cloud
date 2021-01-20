@@ -53,12 +53,12 @@ class Client_Net():
         self.socket = ClientWebSocket()
         task = self.socket.ConnectAsync(uri, self.token)
         task.Wait()
-        print('connected to cloud using .NET client!')
+        print('Connected to cloud using .NET client!')
 
     def disconnect(self):
         """disconnect from server"""
         task = self.socket.CloseAsync(
-            WebSocketCloseStatus.NormalClosure, 'script finished', self.token)
+            WebSocketCloseStatus.NormalClosure, 'Script finished', self.token)
         task.Wait()
         print('closed!')
 
