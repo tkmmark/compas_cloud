@@ -46,15 +46,17 @@ def retry_if_exception(ex, max_retries, wait=0):
 def reconnect_if_disconnected(send):
     def _send(self, data):
         x = 2
-
         while x:
             try:
                 return send(self, data)
             except ConnectionClosedError as e:
-                print("Unable to connect with server; trying to reconnect now...")
-                self.reconnect()
+                print("Disconnected from server... retrying now.")
+                if self.has_server():
+                    self.reconnect()
+                else:
+                    raise RuntimeError("Cannot find server at {}:{}".format(self.host, self.port))
                 x -= 1
-        raise RuntimeError("unable to connect with server")
+        raise RuntimeError("Unable to connect with server")
     return _send
 
 
