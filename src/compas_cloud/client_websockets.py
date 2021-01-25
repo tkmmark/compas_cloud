@@ -20,13 +20,15 @@ class Client_Websockets():
 
     """
 
-    def __init__(self, host='127.0.0.1', port=9000):
+    def __init__(self, host='127.0.0.1', port=9000, display=True):
         """init the client, wait until it successfully connected to server"""
         async def connect():
             uri = "ws://{}:{}".format(host, str(port))
             self.websocket = await websockets.connect(uri, max_size=2**30)
         asyncio.get_event_loop().run_until_complete(connect())
-        print('Connected to cloud using websockets client!')
+
+        if display:
+            print('Connected to cloud using websockets client!')
 
     def send(self, payload):
         """send a message to server and wait until sent"""

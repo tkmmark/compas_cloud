@@ -79,10 +79,11 @@ class CloudBase(object):
         if cloud_instance and cloud_autosolve:
             raise
 
-        if cloud_instance and cc.has_server(port=cloud_port):
+        if cloud_instance:
             # initialisation manually invoke
             instc.__init__(*args, **kwargs)
             p = cc.get_proxy(port=cloud_port)
+
             pinstc = p.cache(instc, dkey=cloud_dkey, protocol=cloud_protocol, channel=cloud_channel)
             return pinstc
         else:
@@ -106,8 +107,8 @@ class CloudBase(object):
             self._wrap_methods_for_cloud_autosolve()
 
     def to_cloud(self, cloud_dkey=None, cache_protocol=2, cloud_port=DEFAULT_PORT, cloud_channel=None):
-        if cc.has_server(port=cloud_port):
-            p = cc.get_proxy(port=cloud_port)
+        p = cc.get_proxy(port=cloud_port)
+        if p:
             pdata = p.cache(self, dkey=cloud_dkey, protocol=cache_protocol, channel=cloud_channel)
             return pdata
         else:
@@ -115,8 +116,8 @@ class CloudBase(object):
 
     @classmethod
     def from_cloud(cls, cached_ref, cloud_port=DEFAULT_PORT, *args, **kwargs):
-        if cc.has_server(port=cloud_port):
-            p = cc.get_proxy(port=cloud_port, *args, **kwargs)
+        p = cc.get_proxy(port=cloud_port, *args, **kwargs)
+        if p:
             retrieved = p.get(cached_ref, *args, **kwargs)
             if not ('as_cache' in kwargs and kwargs['as_cache']):
                 retrieved = cls.from_data(retrieved.to_data())

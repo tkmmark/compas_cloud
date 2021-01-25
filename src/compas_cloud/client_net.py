@@ -43,7 +43,7 @@ class Client_Net():
         Default is ``9000``.
 
     """
-    def __init__(self, host='127.0.0.1', port=9000):
+    def __init__(self, host='127.0.0.1', port=9000, display=True):
         """init the client, wait until it successfully connected to server"""
         scheme = 'ws'
         builder = UriBuilder(scheme, host, port)
@@ -53,7 +53,9 @@ class Client_Net():
         self.socket = ClientWebSocket()
         task = self.socket.ConnectAsync(uri, self.token)
         task.Wait()
-        print('Connected to cloud using .NET client!')
+
+        if display:
+            print('Connected to cloud using .NET client!')
 
     def disconnect(self):
         """disconnect from server"""

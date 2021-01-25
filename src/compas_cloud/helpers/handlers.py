@@ -18,6 +18,7 @@ __all__ = ['ServerSideError', 'retry_if_exception', 'reconnect_if_disconnected']
 class ServerSideError(Exception):
     pass
 
+
 def retry_if_exception(ex, max_retries, wait=0):
     def outer(func):
         @wraps(func)

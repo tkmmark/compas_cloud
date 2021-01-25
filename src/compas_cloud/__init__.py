@@ -21,11 +21,11 @@ __version__ = "0.1.1"
 # ==============================================================================
 
 
-def has_server(host=CLOUD_DEFAULTS['host'], port=CLOUD_DEFAULTS['port']):
-    return Proxy.has_server(host=host, port=port)
+def has_server(host=CLOUD_DEFAULTS['host'], port=CLOUD_DEFAULTS['port'], display=True):
+    return Proxy.has_server(host=host, port=port, display=display)
 
 def get_proxy(host=CLOUD_DEFAULTS['host'], port=CLOUD_DEFAULTS['port'], **kwargs):
-    if has_server(host=host, port=port):
+    if has_server(host=host, port=port, display=False):
         return Proxy(host=host, port=port, **kwargs)
     return None
 

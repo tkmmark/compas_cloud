@@ -329,11 +329,15 @@ class CompasServerProtocol(WebSocketServerProtocol):
 
         dtype = data.get('dtype_')
         fp = data.get('file_path')
-        cls_ = cls_from_dtype(dtype)
-
-        mtd = data.get('method')
-        mtd_ = getattr(cls_, mtd)
-        data['to_cache'] = mtd_(fp)
+        if dtype is None:
+            with open(fp, 'r') as fp:
+                loaded = json.load(fp, cls=DataDecoder)
+        else:
+            cls_ = cls_from_dtype(dtype)
+            mtd = data.get('method')
+            mtd_ = getattr(cls_, mtd)
+            loaded = mtd_(fp)
+        data['to_cache'] = loaded
 
     def cache(self, data,
               id_=None, dkey=None, cache_protocol=1, channel=0,

@@ -341,7 +341,7 @@ class Proxy():
         return cached
 
     def cache_from_file(self, file_path,
-                        dtype, loader=None, method='from_json',
+                        dtype=None, loader=None, method='from_json',
                         dkey=None, replace=False, cache=2, channel=0):
 
         idict = {'request': 'cache_from_file',
@@ -468,7 +468,7 @@ class Proxy():
     # ==============================================================================
 
     @dual_class_instance_method
-    def has_server(cls_or_self, host=None, port=None):
+    def has_server(cls_or_self, host=None, port=None, display=True):
         """Check for an existing server connection"""
         try:
             if isinstance(cls_or_self, Proxy):
@@ -479,11 +479,13 @@ class Proxy():
                 # is accessed as class method
                 host = host or default_host
                 port = port or default_port
-            client = Client(host, port)
+            client = Client(host, port, display=False)
         except Exception:
-            print("No server found at {}:{}.".format(host, port))
+            if display:
+                print("No server found at {}:{}.".format(host, port))
             return False
-        print("Found server at {}:{}.".format(host, port))
+        if display:
+            print("Found server at {}:{}.".format(host, port))
         return client
 
     def check(self):
@@ -547,7 +549,7 @@ class Proxy():
 
         return client
 
-    def try_reconnect(self):
+    def try_reconnect(self, display=True):
         """try to reconnect to a existing server"""
         try:
             client = Client(self.host, self.port)
@@ -555,8 +557,8 @@ class Proxy():
             client = None
             return client
         else:
-            print("Reconnected to an existing server at {}:{}".format(
-                self.host, self.port))
+            if display:
+                print("Reconnected to an existing server at {}:{}".format(self.host, self.port))
         return client
 
     def reconnect(self):

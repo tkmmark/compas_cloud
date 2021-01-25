@@ -11,6 +11,7 @@ class MeshExtended(CloudBase, Mesh):
 # ==============================================================================
 pmesh = MeshExtended(cloud_instance=True, cloud_dkey='mesh', cloud_port=9000)
 print(pmesh)
+# exit()
 # <class '.<< CACHED OBJECT PROXY: MeshExtended >>'>
 # << CACHED OBJECT PROXY:
 # {
