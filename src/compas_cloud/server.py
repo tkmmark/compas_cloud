@@ -729,7 +729,7 @@ if __name__ == '__main__':
     port = args.port
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(factory, '127.0.0.1', 9000)
+    coro = loop.create_server(factory, '127.0.0.1', port)
     server = loop.run_until_complete(coro)
     print("Starting compas_cloud server")
     print("Listening at %s:%s" % (ip, port))
