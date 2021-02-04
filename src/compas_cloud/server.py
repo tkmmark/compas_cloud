@@ -266,12 +266,15 @@ class CompasServerProtocol(WebSocketServerProtocol):
     def get(self, data):
         """get cached data from its id"""
 
-        # called internally from server (e.g. parsing keywords argument)
-        if ('get' not in data and 'cached' in data):
-            data, return_cached_directly = {'get': data}, True
-        # retrieving cached from proxy request
+        # called internally from server by function using dkey
+        if not isinstance(data, dict):
+            data, from_server = {'get': {'cached': data}}, True
+        # called internally from server by args, kwargs parsers
+        elif ('get' not in data and 'cached' in data):
+            data, from_server = {'get': data}, True
+        # retrieving cached for proxy client
         else:
-            data, return_cached_directly = data, False
+            data, from_server = data, False
 
         cached_ref_obj = data['get']
 
@@ -283,14 +286,13 @@ class CompasServerProtocol(WebSocketServerProtocol):
         self.update_timestamps(id_, dkey=dk, channel=chnl, accessed=True)
         cached = self.as_type(cached, data.get('as_type', None))
 
-        # data['_get'] = cached_ref_obj
         data['get'] = cached
 
         if data.get('as_cache', False):
             self.get_cached_object_attributes(cached, cached_ref_obj)
             return cached_ref_obj
 
-        return data if not return_cached_directly else data['get']
+        return data if not from_server else data['get']
 
     def get_timestamps(self, data):
 
@@ -349,7 +351,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
             cache_protocol = data['cache']
             dkey = data.get('dkey', dkey)
             channel = data.get('channel', channel)
-            replace = data.get('replace', replace)
+            # replace = data.get('replace', replace)
             as_type = data.get('as_type', as_type)
         else:
             to_cache = data
@@ -359,12 +361,6 @@ class CompasServerProtocol(WebSocketServerProtocol):
         if id_ is None:
             id_ = id(to_cache)
 
-        # Remove an existing cached object with the same dkey (if requested)
-        if replace and dkey is not None and dkey in self.cached_dkeys:
-            self.cached_dkeys[dkey]
-            id_old = self.dkey_to_id(dkey)
-            self.remove_cached(id_old)
-
         # Cache object...
         self.setup_channel(channel)
         self.cached[channel][id_] = to_cache
@@ -373,6 +369,13 @@ class CompasServerProtocol(WebSocketServerProtocol):
                                created=True, accessed=True)
 
         self.logs['cached']['id_to_channel'][id_] = channel
+
+        # Remove an existing cached object with the same dkey (if requested)
+        # TODO: Move this and next set of code out as 'def name_cached_object'
+        if replace and dkey is not None and dkey in self.cached_dkeys:
+            self.cached_dkeys[dkey]
+            id_old = self.dkey_to_id(dkey)
+            self.remove_cached(id_old)
 
         if dkey is not None:
             self.logs['cached']['dkey_to_id'][dkey] = id_
@@ -461,7 +464,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
         ns = self.sandbox
         if reset:
             ns.clear()
-        ns.update({'_server': self})
+        ns.update({'cloud_server': self})
         return ns
 
     def _parse_output(self, output, data):
@@ -488,7 +491,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
         self.get_cached_arguments(data)
 
         if data.get('pass_server', False):
-            data['kwargs'].update({'_server': self})
+            data['kwargs'].update({'cloud_server': self})
 
         start = time.time()
         res = func(*data['args'], **data['kwargs'])

@@ -76,6 +76,12 @@ class MetaCachedObjectProxyClass(type):
         def __str__(self):
             return proxy_object_name_decorator(self._run_method('__str__', cache=0))
 
+        def __copy__(self):  # HACKY
+            return self
+
+        def __deepcopy__(self, memo):  # HACKY
+            return self
+
         [setattr(cls, _name, _func) for _name, _func in locals().items() if _name not in ['cls', 'meta']]
 
     def __new__(meta, name, bases, dict_,

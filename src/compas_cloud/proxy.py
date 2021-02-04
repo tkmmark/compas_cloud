@@ -113,6 +113,8 @@ class Proxy():
                 return self.run_function(function, cache, dkey, channel, pass_server, *args, **kwargs)
             return run_function
 
+
+
     # ==============================================================================
     # ==============================================================================
     # SEND
@@ -137,6 +139,7 @@ class Proxy():
             return result
 
         result = listen_and_parse()
+
         # keep receiving response until a non-callback result is returned
         while True:
             if isinstance(result, dict):
@@ -176,6 +179,7 @@ class Proxy():
 
     def parse_callbacks(self, args, kwargs):
         """replace a callback functions with its cached reference then sending it to server"""
+        args = list(args)
         for i, a in enumerate(args):
             cb = a
             if callable(cb):
@@ -386,7 +390,7 @@ class Proxy():
 
         return res
 
-    def get_channel_latest(self, channel=None, as_cache=False, as_type=None):
+    def get_channel_latest(self, channel=0, as_cache=False, as_type=None):
 
         idict = {'request': 'get_channel_latest',
                  'channel': channel,
