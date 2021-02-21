@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from autobahn.asyncio.websocket import WebSocketServerProtocol
 
 try:
@@ -267,7 +269,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
         """get cached data from its id"""
 
         # called internally from server by function using dkey
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) and isinstance(data, (int, str)):
             data, from_server = {'get': {'cached': data}}, True
         # called internally from server by args, kwargs parsers
         elif ('get' not in data and 'cached' in data):

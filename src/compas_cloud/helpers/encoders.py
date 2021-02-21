@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -135,10 +136,14 @@ class DataDecoder(json.JSONDecoder):
                 raise DecoderError("The data type '{}' can't be found in the specified module.".format(o['dtype']))
 
             else:
-                data = o['value']
-                if isinstance(data, str):
-                    data = json.loads(data, cls=DataDecoder)
-                return cls.from_data(data)
+                from pprint import pprint
+
+                if 'value' in o:
+                    data = o.get('value')
+                    if isinstance(data, str):
+                        return cls.from_data(json.loads(data, cls=DataDecoder))
+                    elif isinstance(data, dict):
+                        return cls.from_data(data)
 
         if '__tuple__' in o:
 

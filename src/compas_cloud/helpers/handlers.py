@@ -50,7 +50,7 @@ def reconnect_if_disconnected(send):
         while x:
             try:
                 return send(self, data)
-            except ConnectionClosedError as e:
+            except (ConnectionClosedError, RuntimeError) as e:
                 print("Disconnected from server... retrying now.")
                 if self.has_server():
                     self.reconnect()

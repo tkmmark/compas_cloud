@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -173,8 +174,7 @@ class Proxy():
     def parse_cached_wrappers(self, args, kwargs):
 
         args = tuple([_arg._cached if is_cached_object_proxy(_arg) else _arg for _arg in args])
-        kwargs = {_k: _v._cached if is_cached_object_proxy(_k) else _v for _k, _v in kwargs.items()}
-
+        kwargs = {_k: _v._cached if is_cached_object_proxy(_v) else _v for _k, _v in kwargs.items()}
         return args, kwargs
 
     def parse_callbacks(self, args, kwargs):
@@ -235,7 +235,6 @@ class Proxy():
         cache, dkey, chnl = parse_caching_instructions(kwargs, _cache, _dkey, _channel)
         args, kwargs = self.parse_callbacks(args, kwargs)
         args, kwargs = self.parse_cached_wrappers(args, kwargs)
-        # print(args, kwargs)
 
         idict = {'request': 'run_function',
                  'package': package,

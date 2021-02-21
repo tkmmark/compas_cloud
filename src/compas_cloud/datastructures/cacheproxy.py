@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from compas_cloud import DUNDERS_NOT_WRAPPED
 from compas_cloud.helpers.utils import parse_caching_instructions
 
@@ -8,7 +9,6 @@ from compas_cloud.helpers.utils import parse_caching_instructions
 
 
 class MetaCachedObjectProxyClass(type):
-    _classes = {}
 
     @staticmethod
     def proxy_getter_factory(name, is_property=True):
@@ -88,38 +88,32 @@ class MetaCachedObjectProxyClass(type):
                 proxy, attrs, *args, **kwargs):
         """create new object"""
 
-        if name in meta._classes:
-            return meta._classes[name]
-        else:
-            cls_ = super(MetaCachedObjectProxyClass, meta).__new__(meta, name, bases, dict_)
-            cls_._proxy = proxy
-            cls_._attrs = attrs
-            return cls_
+        cls_ = super(MetaCachedObjectProxyClass, meta).__new__(meta, name, bases, dict_)
+        cls_._proxy = proxy
+        cls_._attrs = attrs
+        return cls_
 
     def __init__(cls, name, bases, dct, *args, **kwargs):
         """object proxy instantiation"""
 
-        if name not in MetaCachedObjectProxyClass._classes:
-            cls.build_core_cached_proxy_methods()
 
-            for _name, _type in cls._attrs:
-                if _type == 'property':
-                    _fset = MetaCachedObjectProxyClass.proxy_setter_factory(_name)
-                    _fget = property(MetaCachedObjectProxyClass.proxy_getter_factory(_name))
-                    setattr(cls, _name, _fget.setter(_fset))
-                elif _type == 'method':
-                    _mtd = MetaCachedObjectProxyClass.proxy_method_factory(_name)
-                    setattr(cls, _name, _mtd)
-                elif _type == 'attribute':
-                    _fset = MetaCachedObjectProxyClass.proxy_setter_factory(_name)
-                    _fget = property(MetaCachedObjectProxyClass.proxy_getter_factory(_name))
-                    setattr(cls, _name, _fget.setter(_fset))
+        cls.build_core_cached_proxy_methods()
 
-            # Store created ObjectProxy classes
-            MetaCachedObjectProxyClass._classes[name] = cls
+        for _name, _type in cls._attrs:
+            if _type == 'property':
+                _fset = MetaCachedObjectProxyClass.proxy_setter_factory(_name)
+                _fget = property(MetaCachedObjectProxyClass.proxy_getter_factory(_name))
+                setattr(cls, _name, _fget.setter(_fset))
+            elif _type == 'method':
+                _mtd = MetaCachedObjectProxyClass.proxy_method_factory(_name)
+                setattr(cls, _name, _mtd)
+            elif _type == 'attribute':
+                _fset = MetaCachedObjectProxyClass.proxy_setter_factory(_name)
+                _fget = property(MetaCachedObjectProxyClass.proxy_getter_factory(_name))
+                setattr(cls, _name, _fget.setter(_fset))
 
-            # Instantiate class
-            super(MetaCachedObjectProxyClass, cls).__init__(name, bases, dct)
+        # Instantiate class
+        super(MetaCachedObjectProxyClass, cls).__init__(name, bases, dct)
 
     def __call__(cls, cached, *args, **kwargs):
         obj =  type.__call__(cls, *args, **kwargs)
