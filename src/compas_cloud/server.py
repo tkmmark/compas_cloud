@@ -348,6 +348,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
               as_type=None, replace=False):
         """cache received data and return its reference object"""
 
+        # USE CASE #1: Called from Client with data dict
         if isinstance(data, dict) and 'cache' in data:
             to_cache = data['to_cache']
             cache_protocol = data['cache']
@@ -355,6 +356,8 @@ class CompasServerProtocol(WebSocketServerProtocol):
             channel = data.get('channel', channel)
             # replace = data.get('replace', replace)
             as_type = data.get('as_type', as_type)
+
+        # USE CASE #2: Called 'internally' from server-side objects
         else:
             to_cache = data
 
@@ -375,7 +378,6 @@ class CompasServerProtocol(WebSocketServerProtocol):
         # Remove an existing cached object with the same dkey (if requested)
         # TODO: Move this and next set of code out as 'def name_cached_object'
         if replace and dkey is not None and dkey in self.cached_dkeys:
-            self.cached_dkeys[dkey]
             id_old = self.dkey_to_id(dkey)
             self.remove_cached(id_old)
 

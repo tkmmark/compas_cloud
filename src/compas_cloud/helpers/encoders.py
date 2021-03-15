@@ -84,6 +84,9 @@ class DataEncoder(json.JSONEncoder):
         if isinstance(o, datetime):
             return {'__datetime__': True, 'data': o.isoformat()}
 
+        if isinstance(o, set):
+            return {'__set__': True, 'data': json.dumps(list(o), cls=DataEncoder)}
+
         try:
             import numpy as np
         except ImportError:
@@ -109,6 +112,14 @@ class DataEncoder(json.JSONEncoder):
 
             elif isinstance(o, np.void):
                 return None
+
+        try:
+            from torch import Tensor
+        except ImportError:
+            pass
+        else:
+            if isinstance(o, Tensor):
+                return o.tolist()
 
         return super(DataEncoder, self).default(o)
 
@@ -153,6 +164,10 @@ class DataDecoder(json.JSONDecoder):
 
             return datetime.fromisoformat(o['data'])
 
+        if '__set__' in o:
+            print(o['data'])
+            return set(json.loads(o['data'], cls=DataDecoder))
+
         else:
 
             o_ = {}
@@ -172,3 +187,8 @@ class DataDecoder(json.JSONDecoder):
 
 if __name__ == '__main__':
     pass
+
+    data = [set(['a', 'b', 'a']), set([('a', 'c'), 'b', 'a'])]
+    datas = json.dumps(data, cls=DataEncoder)
+    data = json.loads(datas, cls=DataDecoder)
+    print(data)
