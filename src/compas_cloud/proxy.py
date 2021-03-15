@@ -37,6 +37,9 @@ from compas_cloud.helpers.handlers import dual_class_instance_method
 from compas_cloud.helpers.handlers import ServerSideError
 from compas_cloud.datastructures.cacheproxy import make_cached_object_proxy
 
+from compas_cloud.datastructures.callable import CodeMessenger
+
+
 # ==============================================================================
 # ==============================================================================
 # PROXY
@@ -183,13 +186,15 @@ class Proxy():
         for i, a in enumerate(args):
             cb = a
             if callable(cb):
-                args[i] = {'callback': {'id': id(cb)}}
-                self.callbacks[id(cb)] = cb
+                if not isinstance(cb, CodeMessenger):
+                    args[i] = {'callback': {'id': id(cb)}}
+                    self.callbacks[id(cb)] = cb
         for key in kwargs:
             cb = kwargs[key]
             if callable(cb):
-                kwargs[key] = {'callback': {'id': id(cb)}}
-                self.callbacks[id(cb)] = cb
+                if not isinstance(cb, CodeMessenger):
+                    kwargs[key] = {'callback': {'id': id(cb)}}
+                    self.callbacks[id(cb)] = cb
         return args, kwargs
 
     # INPUTS FORMATTING

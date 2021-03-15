@@ -165,7 +165,7 @@ class DataDecoder(json.JSONDecoder):
             return datetime.fromisoformat(o['data'])
 
         if '__set__' in o:
-            print(o['data'])
+            # print(o['data'])
             return set(json.loads(o['data'], cls=DataDecoder))
 
         else:
