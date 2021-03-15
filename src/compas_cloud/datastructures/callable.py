@@ -27,9 +27,13 @@ from compas_cloud.helpers.encoders import cls_from_dtype
 #             return self
 
 class CodeMessenger(Base):
-    def __init__(self, src: str, 
-                       code: str=None, 
-                       attr: str=None):
+
+    LOAD_ONCE = True
+    _loaded = {}
+
+    def __init__(self, src, 
+                       code=None, 
+                       attr=None):
         """code: 
            src:  'file', 'string', 'import'
            attr: (optional) name of function to import in code
@@ -55,18 +59,29 @@ class CodeMessenger(Base):
     def import_code(self):
         self._func = cls_from_dtype(self._code + '/' + self._attr)
 
+
     @property
-    def function(self):
-        if self._src == 'file':
-            self.load_code_from_file()
-        elif self._src == 'string':
-            self.load_code_from_string()
-        elif self._src == 'import':
-            self.import_code()
+    def key(self):
+        return (self._src, self._code, self._attr)
+
+    def get_function(self):
+        if not hasattr(self, '_func'):
+            if self.__class__.LOAD_ONCE and self.key in self.__class__._loaded:
+                self._func = self.__class__._loaded[self.key]
+            else:
+                if self._src == 'file':
+                    self.load_code_from_file()
+                elif self._src == 'string':
+                    self.load_code_from_string()
+                elif self._src == 'import':
+                    self.import_code()
+
+                if self.__class__.LOAD_ONCE:
+                    self.__class__._loaded[self.key] = self._func
         return self._func
 
     def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
+        return self.get_function()(*args, **kwargs)
 
     @property
     def data(self):
@@ -86,25 +101,23 @@ class CodeMessenger(Base):
         obj = cls(src=data['src'], 
                   code=data['code'], 
                   attr=data['attr'])
-        print('in from_data: ', obj)
         return obj
 
 
-if not compas.IPY:
-    str_ = """
-def foo_from_string(args):
-    res = ("foo_from_string called with %s"%(args))
-    print(res)
-    return res
+# if not compas.IPY:
+#     str_ = """
+# def foo_from_string(args):
+#     res = ("foo_from_string called with %s"%(args))
+#     print(res)
+#     return res
 
-        """
+#         """
 
 def foo_from_file(args):
     res = ("foo_from_file called with %s"%(args))
     print(res)
     return res
 
-import pprint
 def codemessenger_test_func(func):
     # pprint(func)
     print('Inside function...')
