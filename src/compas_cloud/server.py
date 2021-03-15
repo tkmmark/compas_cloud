@@ -432,7 +432,7 @@ class CompasServerProtocol(WebSocketServerProtocol):
         del self.cached[channel]
 
     def remove_cached(self, data):
-        cached_ref_objs = data['to_remove']
+        cached_ref_objs = data['to_remove'] if isinstance(data, dict) else {'to_remove': data}
         cached_ref_objs = [cached_ref_objs] if not isinstance(cached_ref_objs, list) else cached_ref_objs
         print(f"Clear cache: {cached_ref_objs}")
 

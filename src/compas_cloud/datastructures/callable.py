@@ -4,6 +4,7 @@ import os
 import compas
 from compas.base import Base
 
+from compas_cloud.helpers.encoders import cls_from_dtype
 
 # if not compas.IPY:
 #     import inspect
@@ -30,7 +31,7 @@ class CodeMessenger(Base):
                        code: str=None, 
                        attr: str=None):
         """code: 
-           src:  'file', or 'string' 
+           src:  'file', 'string', 'import'
            attr: (optional) name of function to import in code
         """
         self._src = src
@@ -51,12 +52,17 @@ class CodeMessenger(Base):
             code = f.read()
             self.load_code_from_string(code)
 
+    def import_code(self):
+        self._func = cls_from_dtype(self._code + '/' + self._attr)
+
     @property
     def function(self):
         if self._src == 'file':
             self.load_code_from_file()
         elif self._src == 'string':
             self.load_code_from_string()
+        elif self._src == 'import':
+            self.import_code()
         return self._func
 
     def __call__(self, *args, **kwargs):
@@ -93,10 +99,10 @@ def foo_from_string(args):
 
         """
 
-    def foo_from_file(args):
-        res = ("foo_from_file called with %s"%(args))
-        print(res)
-        return res
+def foo_from_file(args):
+    res = ("foo_from_file called with %s"%(args))
+    print(res)
+    return res
 
 import pprint
 def codemessenger_test_func(func):
@@ -116,6 +122,11 @@ if __name__ == '__main__':
     # foo_str = CodeMessenger(src='string', code=str_, attr='foo_from_string')
     # foo_str.function('abc')
     from compas_cloud.datastructures.callable import CodeMessenger
+
+    foo_import = CodeMessenger(src='import', code='compas_cloud.datastructures.callable', attr='foo_from_file')
+    foo_import(123)
+    exit()
+
     foo_file = CodeMessenger(src='file', code=str(__file__), attr='foo_from_file')
     # foo_file.function('abc')
     # print('done')

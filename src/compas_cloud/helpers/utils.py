@@ -99,6 +99,7 @@ def is_cached_object_proxy(object_):
 
 
 def get_function(data):
+    # data = data if isinstance(data, dict) else {'package': data}
     package = data['package']
     method  = data.get('method', None)
 
